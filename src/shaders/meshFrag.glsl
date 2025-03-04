@@ -6,6 +6,8 @@ uniform float chaos;
 uniform vec3 colorA;
 uniform vec3 colorB;
 uniform vec3 colorC;
+uniform vec2 mousePos;
+uniform bool mouseInteraction;
 
 varying vec2 vUv;
 
@@ -52,8 +54,15 @@ float snoise(vec2 v) {
 void main() {
   float noise = snoise(vec2(vUv.y * 2.0 + uTime * 0.1, vUv.x * 2.0)) * chaos;
   float sinWave = sin(vUv.y * waveFrequency + uTime) * waveAmplitude;
-  float offset = sinWave + noise;
 
+  float mouseEffect = 0.0;
+  if(mouseInteraction) {
+    vec2 mouseDistance = vUv - (mousePos * 0.5 + 0.5);
+    mouseEffect = 1.0 - smoothstep(0.0, 0.5, length(mouseDistance));
+    mouseEffect *= 0.2; // Regola l'intensità dell'effetto
+  }
+
+  float offset = sinWave + noise + mouseEffect;
   float xPos = vUv.x + offset;
 
   vec3 finalColor;

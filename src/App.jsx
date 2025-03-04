@@ -1,7 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import MeshGradient from "./components/MeshGradient.jsx";
 import BlurOverlay from "./components/BlurOverlay.jsx";
-import NoiseOverlay from "./components/MeshGradient.jsx";
+import NoiseOverlay from "./components/NoiseOverlay.jsx";
 
 function App() {
     return (

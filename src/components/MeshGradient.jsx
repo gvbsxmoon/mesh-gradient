@@ -1,20 +1,26 @@
 import * as THREE from "three";
+import gsap from "gsap";
+
 import { useFrame } from "@react-three/fiber";
 import { useControls } from "leva";
 import { useRef, useState, useEffect } from "react";
-import colors from "../assets/colors";
 
+import colors from "../assets/colors";
 import meshFragment from "../shaders/meshFrag.glsl";
 import basicVertex from "../shaders/vert.glsl";
 
 export default function () {
     const segments = 40;
     const timeRef = useRef(0);
+    const mousePos = useRef(new THREE.Vector2(0, 0));
+    const targetPos = useRef(new THREE.Vector2(0, 0));
     const [shaderMaterial, setShaderMaterial] = useState();
 
-    const { preset, speed, numLines, waveFrequency, waveAmplitude, chaos } = useControls(
-        "Mesh Gradient",
-        {
+    const { mouseInteraction, preset, speed, numLines, waveFrequency, waveAmplitude, chaos } =
+        useControls("Mesh Gradient", {
+            mouseInteraction: {
+                value: false,
+            },
             preset: {
                 options: Object.keys(colors),
                 value: "ocean",
@@ -47,10 +53,28 @@ export default function () {
                 max: 1,
                 step: 0.01,
             },
-        }
-    );
+        });
 
     const c = colors[preset];
+
+    useEffect(() => {
+        const handleMouseMove = (event) => {
+            if (!mouseInteraction) return;
+
+            const x = (event.clientX / window.innerWidth) * 2 - 1;
+            const y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            gsap.to(targetPos.current, {
+                x: x,
+                y: y,
+                duration: 1,
+                ease: "power2.out",
+            });
+        };
+
+        window.addEventListener("mousemove", handleMouseMove);
+        return () => window.removeEventListener("mousemove", handleMouseMove);
+    }, [mouseInteraction]);
 
     useEffect(() => {
         const material = new THREE.ShaderMaterial({
@@ -65,6 +89,8 @@ export default function () {
                 colorA: { value: new THREE.Color(c.colorA) },
                 colorB: { value: new THREE.Color(c.colorB) },
                 colorC: { value: new THREE.Color(c.colorC) },
+                mousePos: { value: mousePos.current },
+                mouseInteraction: { value: mouseInteraction },
             },
             side: THREE.DoubleSide,
         });
@@ -82,11 +108,16 @@ export default function () {
     useFrame((_, delta) => {
         if (shaderMaterial) {
             timeRef.current += delta + speed;
+
+            mousePos.current.lerp(targetPos.current, 0.1);
+
             shaderMaterial.uniforms.uTime.value = timeRef.current;
             shaderMaterial.uniforms.numLines.value = numLines;
             shaderMaterial.uniforms.waveFrequency.value = waveFrequency;
             shaderMaterial.uniforms.waveAmplitude.value = waveAmplitude;
             shaderMaterial.uniforms.chaos.value = chaos;
+            shaderMaterial.uniforms.mousePos.value = mousePos.current;
+            shaderMaterial.uniforms.mouseInteraction.value = mouseInteraction;
         }
     });
 

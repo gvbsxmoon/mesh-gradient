@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { useControls } from "leva";
 import { useState, useEffect } from "react";
 
-import grainFragment from "../shaders/meshFrag.glsl";
+import grainFragment from "../shaders/grainFrag.glsl";
 import basicVertex from "../shaders/vert.glsl";
 
 export default function () {
