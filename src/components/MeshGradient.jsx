@@ -1,0 +1,99 @@
+import * as THREE from "three";
+import { useFrame } from "@react-three/fiber";
+import { useControls } from "leva";
+import { useRef, useState, useEffect } from "react";
+import colors from "../assets/colors";
+
+import meshFragment from "../shaders/meshFrag.glsl";
+import basicVertex from "../shaders/vert.glsl";
+
+export default function () {
+    const segments = 40;
+    const timeRef = useRef(0);
+    const [shaderMaterial, setShaderMaterial] = useState();
+
+    const { preset, speed, numLines, waveFrequency, waveAmplitude, chaos } = useControls(
+        "Mesh Gradient",
+        {
+            preset: {
+                options: Object.keys(colors),
+                value: "ocean",
+            },
+            speed: {
+                value: 0.008,
+                min: 0.005,
+                max: 0.1,
+                step: 0.001,
+            },
+            numLines: {
+                value: 10,
+                min: 5,
+                max: 30,
+                step: 5,
+            },
+            waveFrequency: {
+                value: 3,
+                min: 1,
+                max: 10,
+            },
+            waveAmplitude: {
+                value: 0.05,
+                min: 0.01,
+                max: 0.2,
+            },
+            chaos: {
+                value: 0.2,
+                min: 0,
+                max: 1,
+                step: 0.01,
+            },
+        }
+    );
+
+    const c = colors[preset];
+
+    useEffect(() => {
+        const material = new THREE.ShaderMaterial({
+            vertexShader: basicVertex,
+            fragmentShader: meshFragment,
+            uniforms: {
+                uTime: { value: 0 },
+                numLines: { value: numLines },
+                waveFrequency: { value: waveFrequency },
+                waveAmplitude: { value: waveAmplitude },
+                chaos: { value: chaos },
+                colorA: { value: new THREE.Color(c.colorA) },
+                colorB: { value: new THREE.Color(c.colorB) },
+                colorC: { value: new THREE.Color(c.colorC) },
+            },
+            side: THREE.DoubleSide,
+        });
+        setShaderMaterial(material);
+    }, [preset]);
+
+    useEffect(() => {
+        if (shaderMaterial) {
+            shaderMaterial.uniforms.colorA.value.set(c.colorA);
+            shaderMaterial.uniforms.colorB.value.set(c.colorB);
+            shaderMaterial.uniforms.colorC.value.set(c.colorC);
+        }
+    }, [c, shaderMaterial]);
+
+    useFrame((_, delta) => {
+        if (shaderMaterial) {
+            timeRef.current += delta + speed;
+            shaderMaterial.uniforms.uTime.value = timeRef.current;
+            shaderMaterial.uniforms.numLines.value = numLines;
+            shaderMaterial.uniforms.waveFrequency.value = waveFrequency;
+            shaderMaterial.uniforms.waveAmplitude.value = waveAmplitude;
+            shaderMaterial.uniforms.chaos.value = chaos;
+        }
+    });
+
+    return (
+        <mesh rotation={[0, 0, 0]}>
+            <planeGeometry args={[10, 10, segments, segments]} />
+            {shaderMaterial && <primitive object={shaderMaterial} attach="material" />}
+        </mesh>
+    );
+}
